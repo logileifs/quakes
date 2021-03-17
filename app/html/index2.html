@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset='utf-8' />
+  <title>Create interactive hover effects with Mapbox GL JS</title>
+  <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v2.1.1/mapbox-gl.js'></script>
+  <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v2.1.1/mapbox-gl.css' rel='stylesheet' />
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    #map {
+      position: absolute;
+      top: 0;
+      bottom: -30px;
+      width: 100%;
+    }
+
+    .quakeInfo {
+      position: absolute;
+      font-family: sans-serif;
+      margin-top: 5px;
+      margin-left: 5px;
+      padding: 5px;
+      width: 30%;
+      border: 2px solid black;
+      font-size: 18px;
+      color: white;
+      /* background-color: #fff; */
+      -webkit-text-stroke-color: black;
+      border-radius: 3px;
+      -webkit-text-stroke-width: 0.5px;
+    }
+
+    .ticker {
+      position: fixed;
+      font-family: sans-serif;
+      width: 100%;
+      height: 20%;
+      border: 1px solid black;
+      font-size: 14px;
+      color: #222;
+      background-color: transparent;
+      bottom: 0;
+    }
+
+    .table {
+      position: fixed;
+      font-family: sans-serif;
+      width: 10%;
+      height: 79%;
+      border: 1px solid black;
+      font-size: 14px;
+      color: #222;
+      background-color: transparent;
+      right: 0;
+    }
+
+    #myChart {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id='map'></div>
+  <div class='quakeInfo'>
+    <div><strong>Magnitude:</strong> <span id='mag'></span></div>
+    <div><strong>Location:</strong> <span id='loc'></span></div>
+    <div><strong>Date:</strong> <span id='date'></span></div>
+  </div>
+  <div id='ticker' class='ticker'>
+    <canvas id='myChart' style="width: 100%; height: 100%;"></canvas>
+  </div>
+  <div class='table'></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4"></script>
+  <script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoibG9naWxlaWZzIiwiYSI6ImNrbTk4bzRwazFmanIycWtuaXdnbnZ0ZTAifQ.eJjqmhjSLkP5eCXQGto8tA';
+    var map = new mapboxgl.Map({
+      container: 'map', // Specify the container ID
+      //style: 'mapbox://styles/mapbox/outdoors-v11', // Specify which map style to use
+      style: 'mapbox://styles/mapbox/satellite-v9',
+      center: [-19.020835, 64.963051],
+      zoom: 6.0 // Specify the starting zoom
+    });
+
+    // Target the relevant span tags in the quakeInfo div
+    var magDisplay = document.getElementById('mag');
+    var locDisplay = document.getElementById('loc');
+    var dateDisplay = document.getElementById('date');
+
+    // JavaScript date constructor:
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date
+    var today = new Date();
+    // Use JavaScript to get the date a week ago
+    var priorDate = new Date().setDate(today.getDate() - 7);
+    // Set that to an ISO8601 timestamp as required by the USGS earthquake API
+    var priorDateTs = new Date(priorDate);
+    var sevenDaysAgo = priorDateTs.toISOString();
+
+    var hour = 60 * 60 * 1000
+    var now = today.getTime()  // red
+    var four_hours_ago = new Date(now - (4*hour)).getTime() // orange
+    var twelve_hours_ago = new Date(now - (12*hour)).getTime() // yellow
+    var twenty_four_hours_ago = new Date(now - (24*hour)).getTime() // green
+    var fourty_eight_hours_ago = new Date(now - (48*hour)).getTime() // blue
+    //var yesterday = new Date().setDate(new Date().getDate()-1)
+    //var day_before = new Date().setDate(today.getDate() - 2)
+
+    map.on('load', function() {
+      console.log('host: ', window.location.origin)
+      console.log('query: ', window.location.search)
+      console.log('query url: ', window.location.origin + '/quakes/' + window.location.search)
+      map.addSource('earthquakes', {
+        'type': 'geojson',
+        'data': window.location.origin + '/quakes/' + window.location.search,
+        //'data': 'https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&eventtype=earthquake&minmagnitude=1&starttime=' + sevenDaysAgo,
+        //'data': 'http://www.seismicportal.eu/fdsnws/event/1/query?limit=10000&minlat=61&maxlat=68&minlon=-4&maxlon=-32&format=json&start=' + sevenDaysAgo,
+        'generateId': true // This ensures that all features have unique IDs
+      });
+
+      map.addLayer({
+        'id': 'earthquakes-viz',
+        'type': 'circle',
+        'source': 'earthquakes',
+        'paint': {
+          'circle-radius': [
+            'interpolate', ['linear'],
+            ['get', 'mag'],
+            1, 20,
+            3, 40,
+            5, 80,
+            7, 160,
+            8, 320,
+            9, 640,
+          ],
+          'circle-color': [
+            'interpolate', ['linear'],
+              ['get', 'time'],
+              fourty_eight_hours_ago, ['rgba', 0, 0, 255, 0.25],
+              twenty_four_hours_ago, ['rgba', 0, 255, 0, 0.25],
+              twelve_hours_ago, ['rgba', 255, 255, 0, 0.25],
+              four_hours_ago, ['rgba', 255, 165, 0, 0.25],
+              now, ['rgba', 255, 0, 0, 0.25],
+              //1, ['rgba', 255, 247, 236, 0.5],
+              //1.5, '#fee8c8',
+              //2, '#fdd49e',
+              //2.5, '#fdbb84',
+              //today, ['rgba', 252, 141, 89, 0.5],
+              //3.5, '#ef6548',
+              //yesterday, ['rgba', 215, 48, 31, 0.5],
+              //6.5, '#b30000',
+              //8.5, '#7f0000',
+              //10.5, '#000'
+
+          ],
+          // The feature-state dependent circle-radius expression will render
+          // the radius size according to its magnitude when
+          // a feature's hover state is set to true
+          //'circle-radius': [
+          //  'case',
+          //  ['boolean',
+          //    ['feature-state', 'hover'],
+          //    false
+          //  ],
+          //  [
+          //    'interpolate', ['linear'],
+          //    ['get', 'mag'],
+          //    1, 20,
+          //    3, 40,
+          //    5, 80,
+          //    7, 160,
+          //    8, 320,
+          //    9, 640,
+          //    10.5, 1280,
+          //  ],
+          //  5
+          //],
+          'circle-stroke-color': ['rgba', 0, 0, 0, 0.5],
+          'circle-stroke-width': 0.5,
+          //'circle-color': ["rgba", 0, 0, 0, 0]
+          // The feature-state dependent circle-color expression will render
+          // the color according to its magnitude when
+          // a feature's hover state is set to true
+          //'circle-color': [
+          //  'case',
+          //  ['boolean',
+          //    ['feature-state', 'hover'],
+          //    false
+          //  ],
+          //  [
+          //    'interpolate', ['linear'],
+          //    ['get', 'mag'],
+          //    1, '#fff7ec',
+          //    1.5, '#fee8c8',
+          //    2, '#fdd49e',
+          //    2.5, '#fdbb84',
+          //    3, '#fc8d59',
+          //    3.5, '#ef6548',
+          //    4.5, '#d7301f',
+          //    6.5, '#b30000',
+          //    8.5, '#7f0000',
+          //    10.5, '#000'
+          //  ],
+          //  ["rgba", 0, 0, 0, 0.5]
+          //]
+        }
+      });
+
+    });
+
+    var quakeID = null;
+
+    map.on('mousemove', 'earthquakes-viz', (e) => {
+
+      map.getCanvas().style.cursor = 'pointer';
+      // Set variables equal to the current feature's magnitude, location, and time
+      var quakeMagnitude = e.features[0].properties.mag;
+      var quakeLocation = '' + e.features[0].properties.lat + ', ' + e.features[0].properties.lon;
+      var quakeDate = new Date(e.features[0].properties.time);
+
+      // Check whether features exist
+      if (e.features.length > 0) {
+        // Display the magnitude, location, and time in the sidebar
+        magDisplay.textContent = quakeMagnitude;
+        locDisplay.textContent = quakeLocation;
+        dateDisplay.textContent = quakeDate;
+
+        // If quakeID for the hovered feature is not null,
+        // use removeFeatureState to reset to the default behavior
+        if (quakeID) {
+          map.removeFeatureState({
+            source: "earthquakes",
+            id: quakeID
+          });
+        }
+
+        quakeID = e.features[0].id;
+
+        // When the mouse moves over the earthquakes-viz layer, set the
+        // feature state for the feature under the mouse
+        map.setFeatureState({
+          source: 'earthquakes',
+          id: quakeID,
+        }, {
+          hover: true
+        });
+
+      }
+    });
+
+    map.on("mouseleave", "earthquakes-viz", function() {
+
+      if (quakeID) {
+        map.setFeatureState({
+          source: 'earthquakes',
+          id: quakeID
+        }, {
+          hover: false
+        });
+      }
+      quakeID = null;
+      // Remove the information from the previously hovered feature from the sidebar
+      magDisplay.textContent = '';
+      locDisplay.textContent = '';
+      dateDisplay.textContent = '';
+      // Reset the cursor style
+      map.getCanvas().style.cursor = '';
+    });
+
+    var ctx = document.getElementById('myChart').getContext('2d');
+    var myChart = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+          labels: [
+            '2021-03-16T09:43:33Z',
+            '2021-03-15T10:10:00Z',
+            '2021-03-14T15:00:00Z',
+            '2021-03-13T15:00:00Z',
+            '2021-03-12T15:00:00Z',
+            '2021-03-11T15:00:00Z',
+            '2021-03-10T15:00:00Z',
+          ],
+          datasets: [
+            {
+              label: '',
+              data: [
+                {
+                  t: '2021-03-16T09:43:33Z',
+                  y: 3
+                },
+                {
+                  t: '2021-03-15T10:10:00Z',
+                  y: 4
+                },
+                {
+                  t: '2021-03-14T15:00:00Z',
+                  y: 5
+                },
+                {
+                  t: '2021-03-13T15:00:00Z',
+                  y: 6
+                },
+                {
+                  t: '2021-03-12T15:00:00Z',
+                  y: 5
+                },
+                {
+                  t: '2021-03-11T15:00:00Z',
+                  y: 4
+                },
+                {
+                  t: '2021-03-10T15:00:00Z',
+                  y: 3
+                },
+              ]
+            }
+          ]
+        },
+        options: {
+          title: {
+            display: false
+          },
+          legend: {
+            display: false,
+            labels: {
+              fontSize: 0
+            }
+          },
+          responsive: true,
+          scales: {
+              xAxes: [{
+                  type: 'time',
+                  position: 'bottom'
+              }]
+          }
+        }
+    });
+  </script>
+
+</body>
+
+</html>

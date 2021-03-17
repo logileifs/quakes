@@ -1,0 +1,19 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+ipython = "*"
+httpx = "*"
+websockets = "*"
+starlette = "*"
+uvicorn = "*"
+aiofiles = "*"
+pyyaml = "*"
+webargs-starlette = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.7"
