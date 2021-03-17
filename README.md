@@ -1,1 +1,1 @@
-[quakes.logileifs.com](quakes.logileifs.com) 
+[quakes.logileifs.com](https://quakes.logileifs.com) 
