@@ -2,422 +2,381 @@
 <html>
 
 <head>
-  <meta charset='utf-8' />
-  <title>Create interactive hover effects with Mapbox GL JS</title>
-  <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
-  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
-  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v2.1.1/mapbox-gl.js'></script>
-  <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v2.1.1/mapbox-gl.css' rel='stylesheet' />
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-    }
+	<meta charset='utf-8' />
+	<title>Skjálftar</title>
+	<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+	<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+	<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v2.1.1/mapbox-gl.js'></script>
+	<link href='https://api.tiles.mapbox.com/mapbox-gl-js/v2.1.1/mapbox-gl.css' rel='stylesheet' />
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+		}
 
-    #map {
-      position: absolute;
-      top: 0;
-      bottom: -30px;
-      width: 100%;
-    }
+		#map {
+			position: absolute;
+			top: 0;
+			bottom: -30px;
+			width: 100%;
+		}
 
-    .quakeInfo {
-      position: absolute;
-      font-family: sans-serif;
-      margin-top: 5px;
-      margin-left: 5px;
-      padding: 5px;
-      width: 30%;
-      border: 2px solid black;
-      font-size: 18px;
-      color: white;
-      /* background-color: #fff; */
-      -webkit-text-stroke-color: black;
-      border-radius: 3px;
-      -webkit-text-stroke-width: 0.5px;
-    }
+		.quakeInfo {
+			position: absolute;
+			font-family: sans-serif;
+			margin-top: 5px;
+			margin-left: 5px;
+			padding: 5px;
+			width: 30%;
+			border: 2px solid black;
+			font-size: 18px;
+			color: white;
+			/* background-color: #fff; */
+			-webkit-text-stroke-color: black;
+			border-radius: 3px;
+			-webkit-text-stroke-width: 0.5px;
+		}
 
-    .ticker {
-      position: fixed;
-      font-family: sans-serif;
-      width: 100%;
-      height: 20%;
-      border: 1px solid black;
-      font-size: 14px;
-      color: #222;
-      background-color: transparent;
-      bottom: 0;
-    }
+		.ticker {
+			position: fixed;
+			font-family: sans-serif;
+			width: 100%;
+			height: 20%;
+			border: 1px solid black;
+			font-size: 14px;
+			color: #222;
+			background-color: transparent;
+			bottom: 0;
+		}
 
-    .table {
-      position: fixed;
-      font-family: sans-serif;
-      width: 10%;
-      height: 79%;
-      border: 1px solid black;
-      font-size: 14px;
-      color: #222;
-      background-color: transparent;
-      right: 0;
-    }
+		.table {
+			position: fixed;
+			font-family: sans-serif;
+			width: 10%;
+			height: 79%;
+			border: 1px solid black;
+			font-size: 14px;
+			color: #222;
+			background-color: transparent;
+			right: 0;
+			display: none;
+		}
 
-    #myChart {
-      width: 100%;
-      height: 100%;
-    }
-  </style>
+		#myChart {
+			width: 100%;
+			height: 100%;
+		}
+
+		#menu {
+			position: absolute;
+			/*background: #efefef;*/
+			padding: 10px;
+			margin: 0 auto;
+			font-family: 'Open Sans', sans-serif;
+			color: white;
+		}
+	</style>
 </head>
 
-<body>
+<body style="display: flex; justify-content: center;">
+	<div id='map'></div>
+	<div id="menu">
+		<input id="satellite-v9" type="radio" name="rtoggle" value="satellite" checked="checked">
+		<!-- See a list of Mapbox-hosted public styles at https://docs.mapbox.com/api/maps/styles/#mapbox-styles -->
+		<label for="satellite-v9">satellite</label>
+		<input id="light-v10" type="radio" name="rtoggle" value="light">
+		<label for="light-v10">light</label>
+		<input id="dark-v10" type="radio" name="rtoggle" value="dark">
+		<label for="dark-v10">dark</label>
+		<input id="streets-v11" type="radio" name="rtoggle" value="streets">
+		<label for="streets-v11">streets</label>
+		<input id="outdoors-v11" type="radio" name="rtoggle" value="outdoors">
+		<label for="outdoors-v11">outdoors</label>
+	</div>
+	<link rel="stylesheet" href="https://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" />
+		<script src="https://code.jquery.com/jquery-1.9.1.js"></script>
+		<script src="https://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
+		<p>
+			<label for="amount">Date range:</label>
+			<input type="text" id="amount" style="border: 0; color: #f6931f; font-weight: bold;" size="100" />
+		</p>
+	<div id="slider-range"></div>
+	<div id='ticker' class='ticker'>
+		<canvas id='chart' style="width: 100%; height: 100%;"></canvas>
+	</div>
+	<div class='table'></div>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4"></script>
+	<script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+	<script>
+		var chart;
+		var quakes;
+		var ctx = document.getElementById('chart').getContext('2d');
+		mapboxgl.accessToken = 'pk.eyJ1IjoibG9naWxlaWZzIiwiYSI6ImNrbTk4bzRwazFmanIycWtuaXdnbnZ0ZTAifQ.eJjqmhjSLkP5eCXQGto8tA';
+		var map = new mapboxgl.Map({
+			container: 'map', // Specify the container ID
+			//style: 'mapbox://styles/mapbox/outdoors-v11', // Specify which map style to use
+			//style: 'mapbox://styles/mapbox/satellite-v9',
+			//style: 'mapbox://styles/mapbox/dark-v10',
+			style: 'mapbox://styles/mapbox/light-v10',
+			center: [-19.020835, 64.963051],
+			zoom: 6.0 // Specify the starting zoom
+		});
 
-  <div id='map'></div>
-  <div class='quakeInfo'>
-    <div><strong>Magnitude:</strong> <span id='mag'></span></div>
-    <div><strong>Location:</strong> <span id='loc'></span></div>
-    <div><strong>Date:</strong> <span id='date'></span></div>
-  </div>
-  <div id='ticker' class='ticker'>
-    <canvas id='myChart' style="width: 100%; height: 100%;"></canvas>
-  </div>
-  <div class='table'></div>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4"></script>
-  <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
-  <script>
-    var quakes;
-    mapboxgl.accessToken = 'pk.eyJ1IjoibG9naWxlaWZzIiwiYSI6ImNrbTk4bzRwazFmanIycWtuaXdnbnZ0ZTAifQ.eJjqmhjSLkP5eCXQGto8tA';
-    var map = new mapboxgl.Map({
-      container: 'map', // Specify the container ID
-      //style: 'mapbox://styles/mapbox/outdoors-v11', // Specify which map style to use
-      //style: 'mapbox://styles/mapbox/satellite-v9',
-      style: 'mapbox://styles/mapbox/dark-v10',
-      center: [-19.020835, 64.963051],
-      zoom: 6.0 // Specify the starting zoom
-    });
+		var layerList = document.getElementById('menu');
+		var inputs = layerList.getElementsByTagName('input');
 
-     
-    function filterBy(month) {
-        var filters = ['==', 'month', month];
-        // map.setFilter('earthquake-circles', filters);
-        // map.setFilter('earthquake-labels', filters);
-        
-        // Set the label to the month
-        full_date = month * 1000000
-        d = new Date(full_date);
-        var print_day = d.getDate()  + "-" + (d.getMonth()+1) + "-" + d.getFullYear(); 
+		function switchLayer(layer) {
+			var layerId = layer.target.id;
+			map.setStyle('mapbox://styles/mapbox/' + layerId);
+		}
 
-        if (d.getMinutes() < 10) {
-            var minutes = "0"+d.getMinutes();
-        }
-        else {
-            var minutes = d.getMinutes();
-        }
-        
-        var print_time = d.getHours() + ":" + minutes;
-        // document.getElementById('day').textContent = print_day;
-        // document.getElementById('time').textContent = print_time;
-    }
+		for (var i = 0; i < inputs.length; i++) {
+			inputs[i].onclick = switchLayer;
+		}
 
-    map.on('load', function () {
+		function filterBy(month) {
+			var filters = ['==', 'month', month];
+			// map.setFilter('earthquake-circles', filters);
+			// map.setFilter('earthquake-labels', filters);
+			
+			// Set the label to the month
+			full_date = month * 1000000
+			d = new Date(full_date);
+			var print_day = d.getDate()  + "-" + (d.getMonth()+1) + "-" + d.getFullYear(); 
 
+			if (d.getMinutes() < 10) {
+					var minutes = "0"+d.getMinutes();
+			}
+			else {
+					var minutes = d.getMinutes();
+			}
+			
+			var print_time = d.getHours() + ":" + minutes;
+			// document.getElementById('day').textContent = print_day;
+			// document.getElementById('time').textContent = print_time;
+		}
 
-    // Here we're using d3 to help us make the ajax request but you can use
-    // Any request method (library or otherwise) you wish.
-    d3.json(
-      //'https://daton.is/skjalftar/timi/geo.data.json',
-      window.location.origin + '/quakes/' + window.location.search,
-      function (err, data) {
-        if (err) throw err;
-          // Create a month property value based on time
-          // used to filter against.
-          data.features = data.features.map(function (d) {
-          // d.properties.month = convert(d.properties.time);
-          // d.properties.month = new Date(d.properties.time).getHours();
-            //d.properties.month = parseInt(d.properties.time.toString().replace(/\d{6}$/, ''));
-          // console.log(d.properties);
-        return d;
-      }
-    );
-    quakes = data;
-    map.addSource('earthquakes', {
-      'type': 'geojson',
-      data: data
-    });
+		function setChart() {
+			chart = new Chart(ctx, {
+				type: 'scatter',
+				data: {
+					datasets: [
+						{
+							label: '',
+							data: quakes.features.map(o => {return {'x': o.properties['time'], 'y': o.properties['mag']}}),
+						}
+					]
+				},
+				options: {
+					title: {
+						display: false
+					},
+					legend: {
+						display: false,
+						labels: {
+							fontSize: 0
+						}
+					},
+					responsive: true,
+					scales: {
+						xAxes: [{
+							type: 'time',
+							position: 'bottom',
+							time: {
+								unit: 'day'
+							}
+						}],
+						yAxes: [{
+							ticks: {
+								min: 0,
+								stepSize: 1
+							}
+						}]
+					}
+				}
+			});
+		}
 
-map.addLayer(
-{
-'id': 'earthquakes-heat',
-'type': 'heatmap',
-'source': 'earthquakes',
-'maxzoom': 9,
-'paint': {
-// Increase the heatmap weight based on frequency and property magnitude
-'heatmap-weight': [
-'interpolate',
-['linear'],
-['get', 'mag'],
-0,
-0,
-6,
-1
-],
-// Increase the heatmap color weight weight by zoom level
-// heatmap-intensity is a multiplier on top of heatmap-weight
-'heatmap-intensity': [
-'interpolate',
-['linear'],
-['zoom'],
-0,
-1,
-9,
-3
-],
-// Color ramp for heatmap.  Domain is 0 (low) to 1 (high).
-// Begin color ramp at 0-stop with a 0-transparancy color
-// to create a blur-like effect.
-'heatmap-color': [
-'interpolate',
-['linear'],
-['heatmap-density'],
-0,
-'rgba(33,102,172,0)',
-0.2,
-'rgb(103,169,207)',
-0.4,
-'rgb(209,229,240)',
-0.6,
-'rgb(253,219,199)',
-0.8,
-'rgb(239,138,98)',
-1,
-'rgb(178,24,43)'
-],
-// Adjust the heatmap radius by zoom level
-'heatmap-radius': [
-'interpolate',
-['linear'],
-['zoom'],
-0,
-2,
-9,
-20
-],
-// Transition from heatmap to circle layer by zoom level
-'heatmap-opacity': [
-'interpolate',
-['linear'],
-['zoom'],
-7,
-1,
-9,
-0
-]
-}
-},
-);
+		function addLayers() {
+			map.addLayer({
+				'id': 'earthquakes-heat',
+				'type': 'heatmap',
+				'source': 'earthquakes',
+				'maxzoom': 9,
+				'paint': {
+					// Increase the heatmap weight based on frequency and property magnitude
+					'heatmap-weight': [
+						'interpolate',
+						['linear'],
+						['get', 'mag'],
+						0,
+						0,
+						6,
+						1
+					],
+					// Increase the heatmap color weight weight by zoom level
+					// heatmap-intensity is a multiplier on top of heatmap-weight
+					'heatmap-intensity': [
+						'interpolate',
+						['linear'],
+						['zoom'],
+						0,
+						1,
+						9,
+						3
+					],
+					// Color ramp for heatmap.  Domain is 0 (low) to 1 (high).
+					// Begin color ramp at 0-stop with a 0-transparancy color
+					// to create a blur-like effect.
+					'heatmap-color': [
+						'interpolate',
+						['linear'],
+						['heatmap-density'],
+						0,
+						'rgba(33,102,172,0)',
+						0.2,
+						'rgb(103,169,207)',
+						0.4,
+						'rgb(209,229,240)',
+						0.6,
+						'rgb(253,219,199)',
+						0.8,
+						'rgb(239,138,98)',
+						1,
+						'rgb(178,24,43)'
+					],
+					// Adjust the heatmap radius by zoom level
+					'heatmap-radius': [
+						'interpolate',
+						['linear'],
+						['zoom'],
+						0,
+						2,
+						9,
+						20
+					],
+					// Transition from heatmap to circle layer by zoom level
+					'heatmap-opacity': [
+						'interpolate',
+						['linear'],
+						['zoom'],
+						7,
+						1,
+						9,
+						0
+					]
+				}
+			});
 
-    map.addLayer({
-        "id": "earthquakes-point",
-        "type": "circle",
-        "source": "earthquakes",
-        "minzoom": 7,
-        "paint": {
-            // Size circle radius by earthquake magnitude and zoom level
-            "circle-radius": [
-                "interpolate",
-                ["linear"],
-                ["zoom"],
-                7, [
-                    "interpolate",
-                    ["linear"],
-                    ["get", "mag"],
-                    1, 1,
-                    6, 4
-                ],
-                16, [
-                    "interpolate",
-                    ["linear"],
-                    ["get", "mag"],
-                    1, 5,
-                    6, 50
-                ]
-            ],
-            // Color circle by earthquake magnitude
-            "circle-color": [
-                "interpolate",
-                ["linear"],
-                ["get", "mag"],
-                0, "rgba(33,102,172,0)",
-                0.5, "rgb(103,169,207)",
-                1, "rgb(209,229,240)",
-                2, "rgb(253,219,199)",
-                3, "rgb(239,138,98)",
-                4, "rgb(178,24,43)"
-            ],
-            "circle-stroke-color": "white",
-            "circle-stroke-width": 1,
-            // Transition from heatmap to circle layer by zoom level
-            "circle-opacity": [
-                "interpolate",
-                ["linear"],
-                ["zoom"],
-                7, 0,
-                8, 1
-            ]
-        }
-    });
+			map.addLayer({
+				"id": "earthquakes-point",
+				"type": "circle",
+				"source": "earthquakes",
+				"minzoom": 7,
+				"paint": {
+					// Size circle radius by earthquake magnitude and zoom level
+					"circle-radius": [
+						"interpolate",
+						["linear"],
+						["zoom"],
+						7, [
+							"interpolate",
+							["linear"],
+							["get", "mag"],
+							1, 1,
+							6, 4
+						],
+						16, [
+							"interpolate",
+							["linear"],
+							["get", "mag"],
+							1, 5,
+							6, 50
+						]
+					],
+					// Color circle by earthquake magnitude
+					"circle-color": [
+						"interpolate",
+						["linear"],
+						["get", "mag"],
+						0, "rgba(33,102,172,0)",
+						0.5, "rgb(103,169,207)",
+						1, "rgb(209,229,240)",
+						2, "rgb(253,219,199)",
+						3, "rgb(239,138,98)",
+						4, "rgb(178,24,43)"
+					],
+					"circle-stroke-color": "white",
+					"circle-stroke-width": 1,
+					// Transition from heatmap to circle layer by zoom level
+					"circle-opacity": [
+						"interpolate",
+						["linear"],
+						["zoom"],
+						7, 0,
+						8, 1
+					]
+				}
+			});
 
+			map.addLayer({
+				'id': 'earthquake-labels',
+				'type': 'symbol',
+				'minzoom': 10,
+				'source': 'earthquakes',
+				'layout': {
+					'text-field': [
+						'concat',
+						['to-string', ['get', 'mag']],
+						''
+					],
+					'text-font': [
+						'Open Sans Bold',
+						'Arial Unicode MS Bold'
+					],
+					'text-size': 8
+				},
+				'paint': {
+					'text-color': 'rgba(0,0,0,0.5)'
+				}
+			});
+		}
 
+		function addSource() {
+			map.addSource('earthquakes', {
+				'type': 'geojson',
+				data: quakes
+			});
+		}
 
+		map.on('styledata', function() {
+			console.log('A styledata event occurred.');
+			//addSource()
+			//addLayers()
+		});
 
-    map.addLayer({
-    'id': 'earthquake-labels',
-    'type': 'symbol',
-    'minzoom': 10,
-    'source': 'earthquakes',
-    'layout': {
-    'text-field': [
-    'concat',
-    ['to-string', ['get', 'mag']],
-    ''
-    ],
-    'text-font': [
-    'Open Sans Bold',
-    'Arial Unicode MS Bold'
-    ],
-    'text-size': 8
-    },
-    'paint': {
-    'text-color': 'rgba(0,0,0,0.5)'
-    }
-    });
+		map.on('load', function () {
+			console.log('on load')
+			d3.json(
+				window.location.origin + '/quakes/' + window.location.search,
+				function (err, data) {
+					if (err) throw err;
+					// Create a month property value based on time
+					// used to filter against.
+					data.features = data.features.map(function (d) {return d;});
+					quakes = data;
 
-    filterBy(1615928398);
-     
-    // document
-    // .getElementById('slider')
-    // .addEventListener('input', function (e) {
-    // var month = parseInt(e.target.value, 10);
-    // // filterBy(month);
+					addSource()
+					addLayers()
+					setChart()
+				}
+			);
+		});
+		map.addControl(new mapboxgl.NavigationControl());
 
-    // });
-    }
-    );
-    });
-    map.addControl(new mapboxgl.NavigationControl());
-
-    var ctx = document.getElementById('myChart').getContext('2d');
-    /*var myChart = new Chart(ctx, {
-        type: 'scatter',
-        data: {
-          labels: [
-            '2021-03-16T09:43:33Z',
-            '2021-03-15T10:10:00Z',
-            '2021-03-14T15:00:00Z',
-            '2021-03-13T15:00:00Z',
-            '2021-03-12T15:00:00Z',
-            '2021-03-11T15:00:00Z',
-            '2021-03-10T15:00:00Z',
-          ],
-          datasets: [
-            {
-              label: '',
-              data: [
-                {
-                  t: '2021-03-16T09:43:33Z',
-                  y: 3
-                },
-                {
-                  t: '2021-03-15T10:10:00Z',
-                  y: 4
-                },
-                {
-                  t: '2021-03-14T15:00:00Z',
-                  y: 5
-                },
-                {
-                  t: '2021-03-13T15:00:00Z',
-                  y: 6
-                },
-                {
-                  t: '2021-03-12T15:00:00Z',
-                  y: 5
-                },
-                {
-                  t: '2021-03-11T15:00:00Z',
-                  y: 4
-                },
-                {
-                  t: '2021-03-10T15:00:00Z',
-                  y: 3
-                },
-              ]
-            }
-          ]
-        },
-        options: {
-          title: {
-            display: false
-          },
-          legend: {
-            display: false,
-            labels: {
-              fontSize: 0
-            }
-          },
-          responsive: true,
-          scales: {
-              xAxes: [{
-                  type: 'time',
-                  position: 'bottom'
-              }]
-          }
-        }
-    });*/
-    var myChart = new Chart(ctx, {
-      type: 'scatter',
-      data: {
-        datasets: [
-          {
-            label: '',
-            data: quakes.features.map(o => {return {'x': o.properties['time'], 'y': o.properties['mag']}}),
-            /*parsing: {
-              xAxisKey: 't',
-              yAxisKey: 'y'
-            }*/
-          }
-        ]
-      },
-      options: {
-        title: {
-          display: false
-        },
-        legend: {
-          display: false,
-          labels: {
-            fontSize: 0
-          }
-        },
-        responsive: true,
-        scales: {
-          xAxes: [{
-            type: 'time',
-            position: 'bottom',
-            time: {
-              unit: 'day'
-            }
-          }],
-          yAxes: [{
-            ticks: {
-              min: 0,
-              stepSize: 1
-            }
-          }]
-        }
-      }
-    });
-  </script>
+	</script>
 
 </body>
 
