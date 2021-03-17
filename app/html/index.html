@@ -308,7 +308,7 @@ map.addLayer(
     map.addControl(new mapboxgl.NavigationControl());
 
     var ctx = document.getElementById('myChart').getContext('2d');
-    var myChart = new Chart(ctx, {
+    /*var myChart = new Chart(ctx, {
         type: 'scatter',
         data: {
           labels: [
@@ -374,6 +374,48 @@ map.addLayer(
               }]
           }
         }
+    });*/
+    var myChart = new Chart(ctx, {
+      type: 'scatter',
+      data: {
+        datasets: [
+          {
+            label: '',
+            data: quakes.features.map(o => {return {'x': o.properties['time'], 'y': o.properties['mag']}}),
+            /*parsing: {
+              xAxisKey: 't',
+              yAxisKey: 'y'
+            }*/
+          }
+        ]
+      },
+      options: {
+        title: {
+          display: false
+        },
+        legend: {
+          display: false,
+          labels: {
+            fontSize: 0
+          }
+        },
+        responsive: true,
+        scales: {
+          xAxes: [{
+            type: 'time',
+            position: 'bottom',
+            time: {
+              unit: 'day'
+            }
+          }],
+          yAxes: [{
+            ticks: {
+              min: 0,
+              stepSize: 1
+            }
+          }]
+        }
+      }
     });
   </script>
 
