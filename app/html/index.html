@@ -162,13 +162,25 @@
 			// document.getElementById('time').textContent = print_time;
 		}
 
+		chartColors = {
+			red: 'rgb(164, 42, 49)',
+			orange: 'rgb(255, 159, 64)',
+			yellow: 'rgb(255, 205, 86)',
+			green: 'rgb(75, 192, 192)',
+			blue: 'rgb(54, 162, 235)',
+			purple: 'rgb(153, 102, 255)',
+			grey: 'rgb(201, 203, 207)'
+		};
+
 		function setChart() {
+			var color = Chart.helpers.color;
 			chart = new Chart(ctx, {
 				type: 'scatter',
 				data: {
 					datasets: [
 						{
 							label: '',
+							backgroundColor: color(chartColors.red).alpha(0.75).rgbString(),
 							data: quakes.features.map(o => {return {'x': o.properties['time'], 'y': o.properties['mag']}}),
 						}
 					]
@@ -195,7 +207,8 @@
 						yAxes: [{
 							ticks: {
 								min: 0,
-								stepSize: 1
+								max: 9,
+								stepSize: 3
 							}
 						}]
 					}
@@ -392,7 +405,6 @@
 				}
 			);
 		});
-		map.addControl(new mapboxgl.NavigationControl());
 
 	</script>
 
