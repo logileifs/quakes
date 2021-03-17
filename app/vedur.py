@@ -142,8 +142,8 @@ def get_quakes(**kwargs):
 			'lat': lat,
 			'depth': depth,
 			'mag': magnitude,
-			'time': time*1000
-			#'time': datetime.fromtimestamp(time).isoformat()
+			#'time': time*1000
+			'time': datetime.fromtimestamp(time).isoformat()
 		}
 		quakes.append(q)
 		#quakes.append(
