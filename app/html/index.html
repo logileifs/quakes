@@ -97,7 +97,7 @@
 		.dropup-content {
 			display: none;
 			position: absolute;
-			bottom: 50px;
+			top: 50px;
 			/*background-color: darkgray;*/
 			min-width: 160px;
 			/*box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);*/
@@ -133,8 +133,15 @@
 	<div id='map'></div>
 	<div id="date-slider" style="top: 0; left: 1%; height: 10%; width: 11%; position: absolute; display: none;">
 		<link rel="stylesheet" href="https://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" />
-		<script src="https://code.jquery.com/jquery-1.9.1.js"></script>
-		<script src="https://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
+		<link rel="stylesheet" href="html/jquery-ui-slider-pips.css" />
+		<!--<script src="https://code.jquery.com/jquery-1.9.1.js"></script>-->
+		<!--<script src="https://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>-->
+		<!-- include the jQuery and jQuery UI scripts -->
+		<script src="https://code.jquery.com/jquery-2.1.1.js"></script>
+		<script src="https://code.jquery.com/ui/1.11.1/jquery-ui.js"></script>
+		<script type="text/javascript" src="html/jquery-ui-slider-pips.js"></script>
+		<!-- plus a jQuery UI theme, here I use "flick" -->
+		<link rel="stylesheet" href="https://code.jquery.com/ui/1.10.4/themes/flick/jquery-ui.css">
 		<p>
 			<!--<label for="amount" style="color: white;">Date range:</label>-->
 			<input type="text" id="amount" style="border: 0; color: white; font-weight: bold; background-color: transparent;" size="100" />
@@ -154,7 +161,7 @@
 		<input id="outdoors-v11" type="radio" name="rtoggle" value="outdoors">
 		<label for="outdoors-v11">outdoors</label>
 	</div>-->
-	<div class="dropup" style="bottom: 21%; left: 5px; position: absolute;">
+	<div class="dropup" style="top: 1%; left: 0.5%; position: absolute;">
 		<button onclick="myFunction()" class="dropbtn">
 			<i class='fas fa-layer-group'></i>
 		</button>
@@ -165,6 +172,12 @@
 			<a id="streets-v11" class="layer-switch" data-layer="streets-v11" href="#">Streets</a>
 			<a id="outdoors-v11" class="layer-switch" data-layer="outdoors-v11" href="#">Outdoors</a>
 		</div>
+	</div>
+	<div style="width: 97%; bottom: 21%; position: absolute;">
+		<div>
+			<i class="fas fa-play" style="color: rgba(255, 255, 255, 0.75);"></i>
+		</div>
+		<div class="slider" style="width: 100%;"></div>
 	</div>
 	<div id='ticker' class='ticker'>
 		<canvas id='chart' style="width: 100%; height: 100%;"></canvas>
@@ -190,6 +203,8 @@
 			center: [-18.820835, 64.763051],
 			zoom: 6.0 // Specify the starting zoom
 		});
+
+		$(".slider").slider().slider("pips");
 
 		$('.layer-switch').click(function(){
 			var layer = this.dataset['layer'];
