@@ -173,7 +173,7 @@
 			<a id="outdoors-v11" class="layer-switch" data-layer="outdoors-v11" href="#">Outdoors</a>
 		</div>
 	</div>
-	<div style="width: 97%; bottom: 21%; position: absolute;">
+	<div style="width: 97%; bottom: 21%; position: absolute; display: none;">
 		<div>
 			<i class="fas fa-play" style="color: rgba(255, 255, 255, 0.75);"></i>
 		</div>
@@ -563,6 +563,43 @@
 
 		map.on('data', function() {
 			//console.log('A data event occurred.');
+		});
+
+		// When a click event occurs on a feature in the earthquakes layer, open a popup at the
+		// location of the feature, with description HTML from its properties.
+		map.on('click', 'earthquakes-point', function (e) {
+			var coordinates = e.features[0].geometry.coordinates.slice();
+			//var description = e.features[0].properties.description;
+			var magnitude = e.features[0].properties.mag
+			var depth = e.features[0].properties.depth
+			var time = new Date(e.features[0].properties.time)
+			var html = "<p><strong>Magnitude: </strong>" + magnitude + "</p>"
+			html = html +"<p><strong>Date: </strong>" + time.getDate() + "." + time.getMonth() + "." + time.getFullYear() + "</p>"
+			html = html + "<p><strong>Time: </strong>" + time.getHours() + ":" + time.getMinutes() + ":" + time.getSeconds() + "</p>"
+			html = html + "<p><strong>Depth: </strong>" + depth + "km</p>"
+
+			// Ensure that if the map is zoomed out such that multiple
+			// copies of the feature are visible, the popup appears
+			// over the copy being pointed to.
+			while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+				coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+			}
+
+			new mapboxgl.Popup()
+				.setLngLat(coordinates)
+				.setHTML(html)
+				//.setHTML('Time: ' + time)
+				.addTo(map);
+		});
+
+		// Change the cursor to a pointer when the mouse is over the earthquakes layer.
+		map.on('mouseenter', 'earthquakes-point', function () {
+			map.getCanvas().style.cursor = 'pointer';
+		});
+
+		// Change it back to a pointer when it leaves.
+		map.on('mouseleave', 'earthquakes-point', function () {
+			map.getCanvas().style.cursor = '';
 		});
 
 		map.on('load', function () {
