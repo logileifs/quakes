@@ -9,6 +9,8 @@
 	<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v2.1.1/mapbox-gl.js'></script>
 	<script src='https://kit.fontawesome.com/53027f506e.js' crossorigin="anonymous"></script>
 	<link href='https://api.tiles.mapbox.com/mapbox-gl-js/v2.1.1/mapbox-gl.css' rel='stylesheet' />
+	<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.0/mapbox-gl-geocoder.min.js"></script>
+	<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.0/mapbox-gl-geocoder.css" type="text/css">
 	<style>
 		body {
 			margin: 0;
@@ -114,6 +116,20 @@
 
 		.show {display: block;}
 
+		.mapboxgl-popup-content {
+			position: relative;
+			background: #fff;
+			border-radius: 3px;
+			box-shadow: 0 1px 2px rgb(0 0 0 / 10%);
+			padding: 10px 10px 15px;
+			pointer-events: auto;
+			font-family: 'Open Sans', sans-serif;
+		}
+
+		.mapboxgl-control-container {
+			display: block;
+		}
+
 		/* Change color of dropup links on hover */
 		/*.dropup-content a:hover {background-color: #ddd}*/
 
@@ -203,6 +219,13 @@
 			center: [-18.820835, 64.763051],
 			zoom: 6.0 // Specify the starting zoom
 		});
+
+		map.addControl(
+			new MapboxGeocoder({
+				accessToken: mapboxgl.accessToken,
+				mapboxgl: mapboxgl
+			})
+		);
 
 		$(".slider").slider().slider("pips");
 
@@ -304,6 +327,26 @@
 			return Math.round(Samples.utils.rand(-100, 100));
 		};
 
+		function chartClick(event) {
+			console.log('chartClick', event)
+			var activePoints = chart.getElementsAtEvent(event);
+			console.log('activePoints', activePoints)
+			var chartData = activePoints[0]['_chart'].config.data;
+			console.log('chartData', chartData)
+			var idx = activePoints[0]['_index'];
+			console.log('idx', idx)
+			var quake = quakes.features[idx]
+			console.log('quake', quake)
+			//var quake = {'coordinates': coordinates, 'mag': magnitude, 'depth': depth, 'time': time}
+			var quakeInfo = {
+				'coordinates': quake.geometry.coordinates.slice(0, 2),
+				'depth': quake.properties.depth,
+				'time': quake.properties.time,
+				'mag': quake.properties.mag,
+			}
+			openQuakePopup(quakeInfo)
+		}
+
 		function setChart() {
 			var color = Chart.helpers.color;
 			chart = new Chart(ctx, {
@@ -383,7 +426,8 @@
 								zeroLineColor: 'rgba(255, 255, 255, 0.5)'
 							}
 						}]
-					}
+					},
+					onClick: chartClick
 				}
 			});
 		}
@@ -565,14 +609,12 @@
 			//console.log('A data event occurred.');
 		});
 
-		// When a click event occurs on a feature in the earthquakes layer, open a popup at the
-		// location of the feature, with description HTML from its properties.
-		map.on('click', 'earthquakes-point', function (e) {
-			var coordinates = e.features[0].geometry.coordinates.slice();
-			//var description = e.features[0].properties.description;
-			var magnitude = e.features[0].properties.mag
-			var depth = e.features[0].properties.depth
-			var time = new Date(e.features[0].properties.time)
+		function openQuakePopup(quake) {
+			console.log('openQuakePopup', quake)
+			var coordinates = quake.coordinates
+			var magnitude = quake.mag
+			var depth = quake.depth
+			var time = new Date(quake.time)
 			var html = "<p><strong>Magnitude: </strong>" + magnitude + "</p>"
 			html = html +"<p><strong>Date: </strong>" + time.getDate() + "." + time.getMonth() + "." + time.getFullYear() + "</p>"
 			html = html + "<p><strong>Time: </strong>" + time.getHours() + ":" + time.getMinutes() + ":" + time.getSeconds() + "</p>"
@@ -581,15 +623,40 @@
 			// Ensure that if the map is zoomed out such that multiple
 			// copies of the feature are visible, the popup appears
 			// over the copy being pointed to.
-			while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-				coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-			}
+			//while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+			//	coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+			//}
 
-			new mapboxgl.Popup()
-				.setLngLat(coordinates)
-				.setHTML(html)
-				//.setHTML('Time: ' + time)
-				.addTo(map);
+			new mapboxgl.Popup().setLngLat(coordinates).setHTML(html).addTo(map);
+		}
+
+		// When a click event occurs on a feature in the earthquakes layer, open a popup at the
+		// location of the feature, with description HTML from its properties.
+		map.on('click', 'earthquakes-point', function (e) {
+			console.log('e', e)
+			//var quake = e.features[0]
+			console.log('coordinates before', e.features[0].geometry.coordinates.slice())
+			var coordinates = e.features[0].geometry.coordinates.slice();
+			console.log('coordinates after', coordinates)
+			var magnitude = e.features[0].properties.mag
+			var depth = e.features[0].properties.depth
+			var time = new Date(e.features[0].properties.time)
+			var quake = {'coordinates': coordinates, 'mag': magnitude, 'depth': depth, 'time': time}
+			return openQuakePopup(quake)
+			var html = "<p><strong>Magnitude: </strong>" + magnitude + "</p>"
+			html = html +"<p><strong>Date: </strong>" + time.getDate() + "." + time.getMonth() + "." + time.getFullYear() + "</p>"
+			html = html + "<p><strong>Time: </strong>" + time.getHours() + ":" + time.getMinutes() + ":" + time.getSeconds() + "</p>"
+			html = html + "<p><strong>Depth: </strong>" + depth + "km</p>"
+
+			// Ensure that if the map is zoomed out such that multiple
+			// copies of the feature are visible, the popup appears
+			// over the copy being pointed to.
+			//console.log('e.lngLat.lng', e.lngLat.lng)
+			//while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+			//	coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+			//}
+
+			new mapboxgl.Popup().setLngLat(coordinates).setHTML(html).addTo(map);
 		});
 
 		// Change the cursor to a pointer when the mouse is over the earthquakes layer.
