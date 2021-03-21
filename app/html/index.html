@@ -383,6 +383,14 @@
 						mode: 'index',
 						//intersect: false,
 					},
+					hover: {
+						onHover: function (e, item) {
+							document.body.style.cursor = 'pointer';
+							//if (item.length) {
+							//	console.log('onHover')
+							//}
+						}
+					},
 					responsive: true,
 					scales: {
 						xAxes: [{
