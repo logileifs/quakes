@@ -4,7 +4,6 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-ipython = "*"
 httpx = "*"
 websockets = "*"
 starlette = "*"
@@ -14,6 +13,8 @@ pyyaml = "*"
 webargs-starlette = "*"
 
 [dev-packages]
+guid = "*"
+ipython = "*"
 
 [requires]
 python_version = "3.7"
