@@ -1,0 +1,14 @@
+name: quakes
+region: ams
+services:
+- dockerfile_path: dockerfile
+  github:
+    branch: master
+    deploy_on_push: true
+    repo: logileifs/quakes
+  http_port: 8080
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  name: quakes
+  routes:
+  - path: /
