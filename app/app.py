@@ -3,6 +3,7 @@ from datetime import date
 from datetime import datetime
 
 import httpx
+import websockets
 from webargs import fields
 from starlette.routing import Route
 from starlette.routing import Mount
@@ -68,28 +69,30 @@ async def quakes(request, **kwargs):
 				'format': 'geojson',
 				'eventtype': 'earthquake',
 				'minmagnitude': 1,
-				'starttime': '2021-03-14T00:00:00'
+				'starttime': start
 			}
 		).json()
 	elif source == 'vedur':
 		log.info('fetching quakes from vedur.is')
 		rsp = get_quakes(start=start, end=end)
-	else:
+	elif source == 'emsc':
 		log.info('fetching quakes from emsc')
 		try:
 			rsp = httpx.get(
 				'http://www.seismicportal.eu/fdsnws/event/1/query',
 				params={
 					'limit': 10000,
-					'start': '2021-03-07T00:00:00',
-					'minlat': 61,
-					'maxlat': 68,
-					'minlon': -32,
-					'maxlon': -4,
+					'start': start,
+					#'minlat': kwargs.get('minlat', None), #61
+					#'maxlat': kwargs.get('maxlat', None), #68
+					#'minlon': kwargs.get('minlon', None), #-32
+					#'maxlon': kwargs.get('maxlon', None), #-4
 					'format': 'json'
 				},
 				timeout=15.0
-			).json()
+			)
+			rsp.raise_for_status()
+			rsp = rsp.json()
 		except httpx.ReadTimeout:
 			log.exception('fetching quakes from emsc timed out')
 	log.info('quakes received')
@@ -110,11 +113,24 @@ async def validation_exception(request, exc):
 	)
 
 
+async def hello():
+	websocket_url = 'wss://www.seismicportal.eu/standing_order/websocket'
+	async with websockets.connect(websocket_url) as ws:
+		while True:
+			msg = await ws.recv()
+			print(f'received msg: {msg}')
+
+
+async def health(request):
+	return JSONResponse({'status': 'ok'})
+
+
 file_path = Path(__file__).resolve()
 html_dir = file_path.parents[0].joinpath('html')
 log.info(f'html_dir: {html_dir}')
 routes = [
 	Route('/', index),
+	Route('/health', health),
 	Route('/quakes', quakes),
 	Mount('/html', StaticFiles(directory=html_dir))
 ]
