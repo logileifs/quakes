@@ -1,6 +1,7 @@
 from pathlib import Path
 from datetime import date
 from datetime import datetime
+from datetime import timedelta
 
 import httpx
 import websockets
@@ -38,12 +39,16 @@ def today():
 
 def week_ago():
 	today = date.today()
-	d = datetime(
+	day = datetime(
 		today.year,
 		today.month,
-		today.day - 7
-	).isoformat()
-	return d
+		today.day,
+		0,
+		0,
+		0
+	)
+	d = day - timedelta(days=7)
+	return d.isoformat()
 
 
 @use_kwargs(
