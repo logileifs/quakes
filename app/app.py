@@ -1,10 +1,12 @@
 from pathlib import Path
 from datetime import date
 from datetime import datetime
+from datetime import timedelta
 
 import httpx
 import websockets
 from webargs import fields
+from marshmallow import Schema
 from starlette.routing import Route
 from starlette.routing import Mount
 from webargs_starlette import use_kwargs
@@ -36,22 +38,38 @@ def today():
 	return d
 
 
-def week_ago():
+def week_ago2():
 	today = date.today()
-	d = datetime(
+	day = datetime(
 		today.year,
 		today.month,
-		today.day - 7
-	).isoformat()
-	return d
+		today.day,
+		0,
+		0,
+		0
+	)
+	d = day - timedelta(days=7)
+	return d.isoformat()
+
+
+def week_ago():
+	now = datetime.utcnow()
+	today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+	seven_days_ago = today - timedelta(days=7)
+	return seven_days_ago.isoformat()
+
+
+class QuakeQuerySchema(Schema):
+	source = fields.String(required=False)
+	start = fields.String(required=False)
+	end = fields.String(required=False)
+
+	class Meta:
+		unknown = 'exclude'
 
 
 @use_kwargs(
-	{
-		'source': fields.String(required=False),
-		'start': fields.String(required=False),
-		'end': fields.String(required=False),
-	},
+	QuakeQuerySchema(),
 	location='query'
 )
 async def quakes(request, **kwargs):
@@ -104,6 +122,14 @@ def index(request):
 	return FileResponse(html_dir.joinpath('index.html'))
 
 
+@use_kwargs({'ip': fields.String(required=False)}, location='query')
+async def locate(request, **kwargs):
+	ip = kwargs.get('ip')
+	rsp = httpx.get(f'http://ip-api.com/json/{ip}')
+	rsp.raise_for_status()
+	return JSONResponse(rsp.json())
+
+
 async def validation_exception(request, exc):
 	log.error(exc.messages)
 	return JSONResponse(
@@ -132,6 +158,7 @@ routes = [
 	Route('/', index),
 	Route('/health', health),
 	Route('/quakes', quakes),
+	Route('/locate', locate),
 	Mount('/html', StaticFiles(directory=html_dir))
 ]
 middlewares = [
