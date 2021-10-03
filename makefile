@@ -18,8 +18,8 @@ build:
 	docker build -t logileifs/quakes:latest -t logileifs/quakes:$(NEW_BUILD_ID) .
 	$(eval LINE_NUMBER:=$(shell cat .env | grep -n BUILD_ID | cut -f1 -d:))
 	@echo $(NEW_BUILD_ID) > ./BUILD
-	#@sed -i "$(LINE_NUMBER)s/.*/BUILD_ID=${NEW_BUILD_ID}/" .env
-	@sed -i '' "$(LINE_NUMBER)s/.*/BUILD_ID=${NEW_BUILD_ID}/" .env
+	@sed -i "$(LINE_NUMBER)s/.*/BUILD_ID=${NEW_BUILD_ID}/" .env
+	#@sed -i '' "$(LINE_NUMBER)s/.*/BUILD_ID=${NEW_BUILD_ID}/" .env
 
 push:
 	# need to include .env again since BUILD_ID might have changed
@@ -27,7 +27,7 @@ push:
 	docker push logileifs/quakes:latest
 	docker push logileifs/quakes:$(BUILD_ID)
 
-run:
+run: build
 	docker run -p 8000:8000 logileifs/quakes:latest
 
 cert:
