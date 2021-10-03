@@ -25,30 +25,16 @@ log = get_logger(__name__)
 
 
 def today():
-	today = date.today()
-	d = datetime(
-		today.year,
-		today.month,
-		today.day,
-		23,
-		59,
-		59
-	).isoformat()
-	return d
-
-
-def week_ago():
-	today = date.today()
-	day = datetime(
-		today.year,
-		today.month,
-		today.day,
-		0,
-		0,
-		0
-	)
-	d = day - timedelta(days=7)
+	now = datetime.utcnow()
+	d = now.replace(hour=23, minute=59, second=59, microsecond=0)
 	return d.isoformat()
+
+
+def days_ago(days=2):
+	now = datetime.utcnow()
+	today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+	days_ago = today - timedelta(days=days)
+	return days_ago.isoformat()
 
 
 @use_kwargs(
@@ -62,7 +48,7 @@ def week_ago():
 async def quakes(request, **kwargs):
 	source = kwargs.get('source', 'vedur')
 	log.info(f'source: {source}')
-	start = kwargs.get('start', week_ago())
+	start = kwargs.get('start', days_ago())
 	log.info(f'start: {start}')
 	end = kwargs.get('end', today())
 	log.info(f'end: {end}')
