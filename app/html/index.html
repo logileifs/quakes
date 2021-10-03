@@ -3,14 +3,28 @@
 
 <head>
 	<meta charset='utf-8' />
-	<title>Quakes</title>
+	<title>Skelfir</title>
 	<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
-	<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+	<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no'/>
 	<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v2.1.1/mapbox-gl.js'></script>
+	<script src="https://code.iconify.design/1/1.0.7/iconify.min.js"></script>
 	<script src='https://kit.fontawesome.com/53027f506e.js' crossorigin="anonymous"></script>
 	<link href='https://api.tiles.mapbox.com/mapbox-gl-js/v2.1.1/mapbox-gl.css' rel='stylesheet' />
 	<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.0/mapbox-gl-geocoder.min.js"></script>
 	<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.0/mapbox-gl-geocoder.css" type="text/css">
+	<script src="https://code.jquery.com/jquery-2.1.1.js"></script>
+	<script src="https://code.jquery.com/ui/1.11.1/jquery-ui.js"></script>
+	<script type="text/javascript" src="html/jquery-ui-slider-pips.js"></script>
+	<link rel="stylesheet" href="html/jquery-ui-slider-pips.css" />
+	<!-- plus a jQuery UI theme, here I use "flick" -->
+	<link rel="stylesheet" href="https://code.jquery.com/ui/1.10.4/themes/flick/jquery-ui.css">
+	<link rel="stylesheet" href="html/slider.css" />
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4"></script>
+	<script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+	<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@0.7.5/dist/chartjs-plugin-zoom.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/litepicker/dist/litepicker.js"></script>
 	<style>
 		body {
 			margin: 0;
@@ -87,6 +101,7 @@
 			color: rgba(255, 255, 255, 0.75);
 			font-size: 32px;
 			border: none;
+			cursor: pointer;
 		}
 
 		/* The container <div> - needed to position the dropup content */
@@ -112,6 +127,7 @@
 			padding: 12px 16px;
 			text-decoration: none;
 			display: block;
+			text-shadow: 0.5px 0.5px grey;
 		}
 
 		.show {display: block;}
@@ -127,7 +143,7 @@
 		}
 
 		.mapboxgl-control-container {
-			display: none;
+			display: block;
 		}
 
 		/* Change color of dropup links on hover */
@@ -147,24 +163,17 @@
 
 <body style="display: flex; justify-content: center;">
 	<div id='map'></div>
-	<div id="date-slider" style="top: 0; left: 1%; height: 10%; width: 11%; position: absolute; display: none;">
+	<!--<div id="date-slider" style="top: 0; left: 1%; height: 10%; width: 11%; position: absolute;">
 		<link rel="stylesheet" href="https://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" />
-		<link rel="stylesheet" href="html/jquery-ui-slider-pips.css" />
-		<!--<script src="https://code.jquery.com/jquery-1.9.1.js"></script>-->
-		<!--<script src="https://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>-->
-		<!-- include the jQuery and jQuery UI scripts -->
 		<script src="https://code.jquery.com/jquery-2.1.1.js"></script>
 		<script src="https://code.jquery.com/ui/1.11.1/jquery-ui.js"></script>
-		<script type="text/javascript" src="html/jquery-ui-slider-pips.js"></script>
-		<!-- plus a jQuery UI theme, here I use "flick" -->
 		<link rel="stylesheet" href="https://code.jquery.com/ui/1.10.4/themes/flick/jquery-ui.css">
 		<p>
-			<!--<label for="amount" style="color: white;">Date range:</label>-->
 			<input type="text" id="amount" style="border: 0; color: white; font-weight: bold; background-color: transparent;" size="100" />
 			<div id="slider-range"></div>
 			<input type="submit" value="Apply">
 		</p>
-	</div>
+	</div>-->
 	<!--<div id="menu">
 		<input id="satellite-v9-2" type="radio" name="rtoggle" value="satellite" checked="checked">
 		<label for="satellite-v9">satellite</label>
@@ -179,7 +188,8 @@
 	</div>-->
 	<div class="dropup" style="top: 1%; left: 0.5%; position: absolute;">
 		<button onclick="myFunction()" class="dropbtn">
-			<i class='fas fa-layer-group'></i>
+			<i class='fas fa-layer-group' style="text-shadow: 0.5px 0.5px grey;"></i>
+			<!--<span class="iconify" data-icon="mdi-buffer"></span>-->
 		</button>
 		<div id="myDropdown" class="dropup-content">
 			<a id="satellite-v9" class="layer-switch" data-layer="satellite-v9" href="#">Satellite</a>
@@ -189,24 +199,46 @@
 			<a id="outdoors-v11" class="layer-switch" data-layer="outdoors-v11" href="#">Outdoors</a>
 		</div>
 	</div>
-	<div style="width: 97%; bottom: 21%; position: absolute; display: none;">
-		<div>
-			<i class="fas fa-play" style="color: rgba(255, 255, 255, 0.75);"></i>
+	<div style="width: 97%; bottom: 21%; position: absolute;">
+		<div style="display: none;">
+			<!--<i class="fas fa-play" style="color: rgba(255, 255, 255, 0.75);"></i>-->
+			<span class="iconify" data-icon="mdi-play"></span>
 		</div>
-		<div class="slider" style="width: 100%;"></div>
+		<div id="flat-slider" style="width: 100%;"></div>
+	</div>
+	<div id="control-panel" style="position: fixed; left: 0; border: 1px solid yellow; bottom: 20%; color: white; display: none; flex-direction: column;">
+		<input type="text" id="date-input" class="form-control">
+		<button id="reportrange" onclick="showDatePicker()" class="dropbtn">
+			<i class="fas fa-calendar-week"></i>
+			<!--<span class="iconify" data-icon="mdi-calendar"></span>-->
+		</button>
+		<button onclick="myFunction()" class="dropbtn">
+			<!--<i class="fas fa-bullseye"></i>-->
+			<i class="fas fa-waveform-path"></i>
+			<!--<span class="iconify" data-icon="mdi-scale"></span>-->
+		</button>
+		<button onclick="myFunction()" class="dropbtn">
+			<span class="iconify" data-icon="mdi-chevron-triple-down"></span>
+		</button>
+		<!--<p>Magnitude</p>-->
+		<!--<p>Depth</p>-->
+		<!--<div>
+			<p>Date</p>
+			<label for="from">From</label>
+			<input type="text" id="from" name="from">
+			<label for="to">to</label>
+			<input type="text" id="to" name="to">
+		</div>-->
 	</div>
 	<div id='ticker' class='ticker'>
 		<canvas id='chart' style="width: 100%; height: 100%;"></canvas>
 	</div>
 	<div class='table'></div>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4"></script>
-	<script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 	<script>
 		var chart;
 		var quakes;
 		var switchLayers = false
-		var defaultStyle = 'dark-v10'
+		var defaultStyle = 'satellite-v9'
 		var ctx = document.getElementById('chart').getContext('2d');
 		mapboxgl.accessToken = 'pk.eyJ1IjoibG9naWxlaWZzIiwiYSI6ImNrbTk4bzRwazFmanIycWtuaXdnbnZ0ZTAifQ.eJjqmhjSLkP5eCXQGto8tA';
 		var map = new mapboxgl.Map({
@@ -227,8 +259,6 @@
 			})
 		);
 
-		$(".slider").slider().slider("pips");
-
 		$('.layer-switch').click(function(){
 			var layer = this.dataset['layer'];
 			switchLayer(layer);
@@ -238,6 +268,13 @@
 
 		function myFunction() {
 			document.getElementById("myDropdown").classList.toggle("show");
+		}
+
+		function showDatePicker() {
+			new Litepicker({
+				element: '#input-eg-show-nights',
+				singleMode: true,
+			})
 		}
 
 		// Close the dropup if the user clicks outside of it
@@ -259,11 +296,48 @@
 		//radioButton = document.getElementById(defaultStyle)
 		//radioButton.checked = true
 
+		function yearAgo() {
+			d = new Date()
+			return new Date(d.setFullYear(d.getFullYear()-1))
+		}
+
 		var now = new Date()
-		var yearAgo = new Date();
-		yearAgo.setFullYear(yearAgo.getFullYear() - 1);
-		var beginning = new Date('2021-01-01T00:00:00Z')
+		//var yearAgo = new Date();
+		//yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+		//var beginning = new Date(2021, 0, 1)
+		var beginning = yearAgo()
 		var weekAgo = new Date(new Date().setDate(new Date().getDate() -7))
+
+		daysOfYear = []
+		for (var d = yearAgo(); d <= now; d.setDate(d.getDate() + 1)) {
+			daysOfYear.push(new Date(d));
+		}
+
+		function dateToString(date) {
+			return date.getDate() + "." + (date.getMonth()+1) + "." + date.getFullYear()
+		}
+
+		function createSlider() {
+			$("#flat-slider").slider({
+				max: now.getTime() / 1000,
+				min: beginning.getTime() / 1000,
+				range: true,
+				step: 86400,
+				values: [weekAgo.getTime() / 1000, now.getTime() / 1000],
+				slide: function (event, ui) {
+					$("#amount").val((new Date(ui.values[0] * 1000).toDateString()) + " - " + (new Date(ui.values[1] * 1000)).toDateString());
+				}
+			}).slider("pips", {
+				labels: daysOfYear.map(o => {return dateToString(o)}),
+				rest: "label",
+				first: "pip",
+				last: "pip",
+				step: 30,
+			}).slider("float", {
+				labels: daysOfYear.map(o => {return dateToString(o)}),
+				pips: true,
+			});
+		}
 
 		$(function () {
 			$("#slider-range").slider({
@@ -434,6 +508,39 @@
 								zeroLineColor: 'rgba(255, 255, 255, 0.5)'
 							}
 						}]
+					},
+					plugins: {
+						zoom: {
+							// Container for pan options
+							pan: {
+								// Boolean to enable panning
+								enabled: true,
+
+								// Panning directions. Remove the appropriate direction to disable 
+								// Eg. 'y' would only allow panning in the y direction
+								mode: 'xy',
+							},
+							// Container for zoom options
+							zoom: {
+								// Boolean to enable zooming
+								enabled: true,
+								// Zooming directions. Remove the appropriate direction to disable 
+								// Eg. 'y' would only allow zooming in the y direction
+								mode: 'y',
+								speed: 0.1,
+								threshold: 0.1,
+								rangeMin: {
+									// Format of min zoom range depends on scale type
+									x: null,
+									y: 0
+								},
+								rangeMax: {
+									// Format of max zoom range depends on scale type
+									x: null,
+									y: 9
+								},
+							}
+						}
 					},
 					onClick: chartClick
 				}
@@ -624,7 +731,7 @@
 			var depth = quake.depth
 			var time = new Date(quake.time)
 			var html = "<p><strong>Magnitude: </strong>" + magnitude + "</p>"
-			html = html +"<p><strong>Date: </strong>" + time.getDate() + "." + time.getMonth() + "." + time.getFullYear() + "</p>"
+			html = html +"<p><strong>Date: </strong>" + time.getDate() + "." + (time.getMonth()+1) + "." + time.getFullYear() + "</p>"
 			html = html + "<p><strong>Time: </strong>" + time.getHours() + ":" + time.getMinutes() + ":" + time.getSeconds() + "</p>"
 			html = html + "<p><strong>Depth: </strong>" + depth + "km</p>"
 
@@ -652,7 +759,7 @@
 			var quake = {'coordinates': coordinates, 'mag': magnitude, 'depth': depth, 'time': time}
 			return openQuakePopup(quake)
 			var html = "<p><strong>Magnitude: </strong>" + magnitude + "</p>"
-			html = html +"<p><strong>Date: </strong>" + time.getDate() + "." + time.getMonth() + "." + time.getFullYear() + "</p>"
+			html = html +"<p><strong>Date: </strong>" + time.getDate() + "." + (time.getMonth()+1) + "." + time.getFullYear() + "</p>"
 			html = html + "<p><strong>Time: </strong>" + time.getHours() + ":" + time.getMinutes() + ":" + time.getSeconds() + "</p>"
 			html = html + "<p><strong>Depth: </strong>" + depth + "km</p>"
 
