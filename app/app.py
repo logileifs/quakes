@@ -117,7 +117,12 @@ async def health(request):
 
 
 async def locate(request):
-	ip = request.client.host
+	try:
+		ip = request.headers.get('x-forwarded-for').split(',')[0]
+		log.info(f"headers: {request.headers}")
+	except Exception:
+		ip = request.client.host
+
 	#ip = '191.101.41.59'
 	log.info(f"headers: {request.headers}")
 	log.info(f"client_ip: {ip}")
