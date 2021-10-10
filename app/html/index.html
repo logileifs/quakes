@@ -25,6 +25,7 @@
 	<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@0.7.5/dist/chartjs-plugin-zoom.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/litepicker/dist/litepicker.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/litepicker/dist/plugins/ranges.js"></script>
 	<style>
 		body {
 			margin: 0;
@@ -36,7 +37,7 @@
 		#map {
 			position: absolute;
 			top: 0;
-			bottom: -30px;
+			bottom: -36px;
 			width: 100%;
 		}
 
@@ -166,6 +167,14 @@
 
 		.litepicker .container__days {
 			height: 15.4vh !important;
+		}
+
+		.litepicker button {
+			cursor: pointer !important;
+		}
+
+		.litepicker .day-item {
+			cursor: pointer !important;
 		}
 
 		:root {
@@ -342,7 +351,7 @@
 
 		var chart
 		var quakes
-		var picker = picker = new Litepicker({
+		var picker = new Litepicker({
 			//element: '#input-eg-show-nights',
 			element: document.getElementById('date-input'),
 			singleMode: false,
@@ -350,6 +359,17 @@
 			endDate: new Date(),
 			autoApply: false,
 			position: "bottom left",
+			plugins: ['ranges'],
+			ranges: {
+				position: 'right',
+				//customRanges: {
+				//	'Last 48 hours': [
+				//		// 48 hours ago
+				//		new Date(new Date().getTime() - (1000*60*60*48)),
+				//		new Date()
+				//	] // first start date then end date.
+				//},
+			},
 			setup: (picker) => {
 				picker.on('button:apply', (date1, date2) => {
 					// some action
