@@ -164,6 +164,10 @@
 			bottom: 0;
 		}
 
+		.litepicker .container__days {
+			height: 15.4vh !important;
+		}
+
 		:root {
 			/* change background color for .container__months */
 			/*--litepicker-container-months-color-bg: #333 !important;*/
@@ -316,13 +320,16 @@
 				throw Error(response.statusText)
 			}
 		})
-		.then(data => {
-			if (data.status === 'fail')
+		.then(
+			data =>
 			{
-				throw Error(data.message)
+				if (data.status === 'fail')
+				{
+					throw Error(data.message)
+				}
+				return data
 			}
-			return data
-		})
+		)
 		.then(ip_data => {
 			map.flyTo({'center': [ip_data.lon, ip_data.lat]})
 			setCookie('center', JSON.stringify([ip_data.lon, ip_data.lat]))
