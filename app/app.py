@@ -117,9 +117,13 @@ async def health(request):
 
 
 async def locate(request):
-	ip = request.client.host
+	try:
+		ip = request.headers.get('x-forwarded-for').split(',')[0]
+		log.info(f"headers: {request.headers}")
+	except Exception:
+		ip = request.client.host
+
 	#ip = '191.101.41.59'
-	log.info(f"headers: {request.headers}")
 	print(f"client_ip: {ip}")
 	rsp = httpx.get(f'http://ip-api.com/json/{ip}')
 	rsp.raise_for_status()
