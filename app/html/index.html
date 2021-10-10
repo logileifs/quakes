@@ -65,7 +65,7 @@
 			font-size: 14px;
 			color: #222;
 			background-color: transparent;
-			bottom: 0;
+			bottom: 3%;
 		}
 
 		.table {
@@ -102,6 +102,19 @@
 			font-size: 32px;
 			border: none;
 			cursor: pointer;
+		}
+
+		.close-ticker-btn {
+			cursor: pointer;
+			float: right;
+			background-color: transparent;
+			/*border-left: 0;*/
+			/*border-top: 0;*/
+			/*border-bottom: 0;*/
+			color: rgba(255, 255, 255, 0.75);
+			font-size: 32px;
+			border: none;
+			margin-right: 0.5%;
 		}
 
 		/* The container <div> - needed to position the dropup content */
@@ -144,6 +157,17 @@
 
 		.mapboxgl-control-container {
 			display: block;
+		}
+
+		.litepicker {
+			top: auto !important;
+			bottom: 0;
+		}
+
+		:root {
+			/* change background color for .container__months */
+			/*--litepicker-container-months-color-bg: #333 !important;*/
+
 		}
 
 		/* Change color of dropup links on hover */
@@ -206,8 +230,8 @@
 		</div>
 		<div id="flat-slider" style="width: 100%;"></div>
 	</div>
-	<div id="control-panel" style="position: fixed; left: 0; border: 1px solid yellow; bottom: 20%; color: white; display: none; flex-direction: column;">
-		<input type="text" id="date-input" class="form-control">
+	<div id="control-panel" style="position: fixed; left: 0; border: 1px solid yellow; bottom: 20%; color: white; display: none; flex-direction: column; margin-right: 0.5%">
+		<!--<input type="text" id="date-input" class="form-control">-->
 		<button id="reportrange" onclick="showDatePicker()" class="dropbtn">
 			<i class="fas fa-calendar-week"></i>
 			<!--<span class="iconify" data-icon="mdi-calendar"></span>-->
@@ -231,12 +255,134 @@
 		</div>-->
 	</div>
 	<div id='ticker' class='ticker'>
+		<div style="left: 0; bottom: 20%; color: white; flex-direction: column; width: 100%">
+			<button onclick="toggleTicker()" class="close-ticker-btn">
+				<i id="close-arrow" class="fas fa-chevron-circle-down" aria-hidden="true" style="text-shadow: 0.5px 0.5px grey;"></i>
+			</button>
+			<button onclick="showDatePicker()" style="background-color: transparent; color: rgba(255, 255, 255, 0.75); font-size: 32px; border: none; cursor: pointer;">
+				<input type="text" id="date-input" class="form-control" style="display: none;">
+				<i class="fas fa-calendar-week" style="text-shadow: 0.5px 0.5px grey;"></i>
+			</button>
+		</div>
 		<canvas id='chart' style="width: 100%; height: 100%;"></canvas>
 	</div>
 	<div class='table'></div>
 	<script>
-		var chart;
-		var quakes;
+		API_URL = new URL(window.location.href + 'quakes/')
+		function openTicker(){
+			document.getElementById("ticker").style.height = "20%"
+			document.getElementById('close-arrow').style.transform = "rotate(0deg)"
+		}
+
+		function closeTicker(){
+			document.getElementById("ticker").style.height = "1%";
+			document.getElementById('close-arrow').style.transform = "rotate(180deg)"
+		}
+
+		function toggleTicker() {
+			var height = document.getElementById('ticker').style.height
+			if (height == "1%") {
+				openTicker()
+			}
+			else {
+				closeTicker()
+			}
+		}
+
+		function setCookie(name, value) {
+			document.cookie = name + "=" + (value || "") + "; path=/";
+		}
+
+		function getCookie(name) {
+			var nameEQ = name + "=";
+			var ca = document.cookie.split(';');
+			for(var i=0;i < ca.length;i++) {
+				var c = ca[i];
+				while (c.charAt(0)==' ') c = c.substring(1,c.length);
+				if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+			}
+			return null;
+		}
+
+		function eraseCookie(name) {
+			document.cookie = name +'=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+		}
+
+		fetch(window.location.origin + '/locate/')
+		.then((response) => {
+			if (response.status >= 200 && response.status <= 299) {
+				return response.json()
+			} else {
+				throw Error(response.statusText)
+			}
+		})
+		.then(data=>{if (data.status === 'fail') { throw Error(data.message) } })
+		.then(ip_data=>{
+			map.flyTo({'center': [ip_data.lon, ip_data.lat]})
+			setCookie('center', JSON.stringify([ip_data.lon, ip_data.lat]))
+		})
+		.catch((error) => {
+			console.log(error)
+			var center = JSON.parse(getCookie('center'))
+			map.flyTo({'center': center})
+		})
+
+		var chart
+		var quakes
+		var picker = picker = new Litepicker({
+			//element: '#input-eg-show-nights',
+			element: document.getElementById('date-input'),
+			singleMode: false,
+			parentEl: document.getElementById('ticker'),
+			endDate: new Date(),
+			autoApply: false,
+			position: "bottom left",
+			setup: (picker) => {
+				picker.on('button:apply', (date1, date2) => {
+					// some action
+					console.log('date selected')
+					console.log('start date: ', date1)
+					console.log('end date: ', date2)
+					url = new URL(API_URL)
+					url.searchParams.append(
+						'start',
+						new Date(
+							date1.toDateString()
+						).toISOString().replace(/.\d+Z$/g, '')
+					)
+					d = new Date(
+						date2.toDateString()
+					)
+					d.setHours(23)
+					d.setMinutes(59)
+					d.setSeconds(59)
+					url.searchParams.append(
+						'end',
+						d.toISOString().replace(/.\d+Z$/g, '')
+					)
+					console.log('fetching new quakes: ' + url.href)
+					fetch(url.href)
+					.then(response => {
+						if (response.status >= 200 && response.status <= 299) {
+							return response.json()
+						} else {
+							throw Error(response.status)
+						}
+					})
+					.then(data => {
+						console.log('data recieved: ', data)
+						quakes = data
+						map.removeLayer('earthquakes-heat')
+						map.removeLayer('earthquakes-point')
+						map.removeLayer('earthquake-labels')
+						addSource()
+						addLayers()
+						setChart()
+						window.history.pushState('page2', 'Skelfir', window.location.href);
+					})
+				});
+			}
+		})
 		var switchLayers = false
 		var defaultStyle = 'satellite-v9'
 		var ctx = document.getElementById('chart').getContext('2d');
@@ -249,7 +395,7 @@
 			//style: 'mapbox://styles/mapbox/light-v10',
 			style: 'mapbox://styles/mapbox/' + defaultStyle,
 			center: [-18.820835, 64.763051],
-			zoom: 6.0 // Specify the starting zoom
+			zoom: getCookie('zoom') // Specify the starting zoom
 		});
 
 		map.addControl(
@@ -271,10 +417,7 @@
 		}
 
 		function showDatePicker() {
-			new Litepicker({
-				element: '#input-eg-show-nights',
-				singleMode: true,
-			})
+			picker.show()
 		}
 
 		// Close the dropup if the user clicks outside of it
@@ -718,11 +861,17 @@
 				}, 25);
 				switchLayers = false
 			}
-		});
+		})
 
 		map.on('data', function() {
-			//console.log('A data event occurred.');
-		});
+			//console.log('A data event occurred.')
+		})
+
+		map.on('zoom', () => {
+			//console.log('A zoom event occurred.')
+			//console.log('current zoom: ' + map.getZoom())
+			setCookie('zoom', map.getZoom())
+		})
 
 		function openQuakePopup(quake) {
 			console.log('openQuakePopup', quake)

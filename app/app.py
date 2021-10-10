@@ -116,6 +116,15 @@ async def health(request):
 	return JSONResponse({'status': 'ok'})
 
 
+async def locate(request):
+	ip = request.client.host
+	#ip = '191.101.41.59'
+	print(f"client_ip: {ip}")
+	rsp = httpx.get(f'http://ip-api.com/json/{ip}')
+	rsp.raise_for_status()
+	return JSONResponse(rsp.json())
+
+
 file_path = Path(__file__).resolve()
 html_dir = file_path.parents[0].joinpath('html')
 log.info(f'html_dir: {html_dir}')
@@ -123,6 +132,7 @@ routes = [
 	Route('/', index),
 	Route('/health', health),
 	Route('/quakes', quakes),
+	Route('/locate/', locate),
 	Mount('/html', StaticFiles(directory=html_dir))
 ]
 middlewares = [
