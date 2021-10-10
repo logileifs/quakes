@@ -316,8 +316,14 @@
 				throw Error(response.statusText)
 			}
 		})
-		.then(data=>{if (data.status === 'fail') { throw Error(data.message) } })
-		.then(ip_data=>{
+		.then(data => {
+			if (data.status === 'fail')
+			{
+				throw Error(data.message)
+			}
+			return data
+		})
+		.then(ip_data => {
 			map.flyTo({'center': [ip_data.lon, ip_data.lat]})
 			setCookie('center', JSON.stringify([ip_data.lon, ip_data.lat]))
 		})
