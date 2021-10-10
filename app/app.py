@@ -124,7 +124,8 @@ async def locate(request):
 		ip = request.client.host
 
 	#ip = '191.101.41.59'
-	print(f"client_ip: {ip}")
+	log.info(f"headers: {request.headers}")
+	log.info(f"client_ip: {ip}")
 	rsp = httpx.get(f'http://ip-api.com/json/{ip}')
 	rsp.raise_for_status()
 	return JSONResponse(rsp.json())
